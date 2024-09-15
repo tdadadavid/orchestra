@@ -11,7 +11,7 @@ import (
 
 func main() {
 	fmt.Printf("Create test container \n")
-	dTask, createResult := createContainer()
+	dTask, createResult := createContainer("ubuntu")
 	if createResult.Error != nil {
 		log.Printf("Error creating container: %v", createResult.Error)
 		os.Exit(1)
@@ -27,10 +27,10 @@ func main() {
 	fmt.Printf("Done testing \n")
 }
 
-func createContainer() (*task.Docker, *task.DockerResult) {
+func createContainer(image string) (*task.Docker, *task.DockerResult) {
 	c := task.Config{
 		Name:  "test_container_1",
-		Image: "node",
+		Image: image,
 		Env:   []string{},
 		Cmd: []string{
 			"new Date()",
@@ -49,7 +49,7 @@ func createContainer() (*task.Docker, *task.DockerResult) {
 		return nil, nil
 	}
 
-	fmt.Printf("Container %s is running with config", result.ContainerId)
+	fmt.Printf("Container %s is running with config ", result.ContainerId)
 	return &d, &result
 }
 
