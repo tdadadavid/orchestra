@@ -2,73 +2,64 @@ package main
 
 import (
 	"fmt"
-	"github.com/docker/go-connections/nat"
-	"github.com/golang-collections/collections/queue"
-	"github.com/google/uuid"
-	"orchestra/manager"
-	"orchestra/node"
+	"github.com/docker/docker/client"
+	"log"
 	"orchestra/task"
-	"orchestra/worker"
+	"os"
 	"time"
 )
 
 func main() {
-	t := task.Task{
-		ID:            uuid.New(),
-		Name:          "test",
-		State:         task.Pending,
-		Image:         "ubuntu",
-		Memory:        "90",
-		Disk:          1,
-		ExposedPorts:  make(nat.PortSet),
-		PortBindings:  map[string]string{},
-		RestartPolicy: "on-failure",
-		StartTime:     time.Now(),
-		FinishTime:    time.Now(),
+	fmt.Printf("Create test container \n")
+	dTask, createResult := createContainer()
+	if createResult.Error != nil {
+		log.Printf("Error creating container: %v", createResult.Error)
+		os.Exit(1)
 	}
 
-	tEvent := task.TaskEvent{
-		ID:        uuid.New(),
-		State:     task.Pending,
-		TimeStamp: time.Now(),
-		Task:      t,
+	time.Sleep(10 * time.Second)
+
+	result := stopContainer(dTask)
+	if result.Error != nil {
+		log.Printf("Error stopping container: %v", result.Error)
 	}
 
-	fmt.Printf("Task: %v\n, event: %v\n", t, tEvent)
+	fmt.Printf("Done testing \n")
+}
 
-	w := worker.Worker{
-		Name:      "Worker-1",
-		Queue:     *queue.New(),
-		Db:        make(map[uuid.UUID]task.Task),
-		TaskCount: 0,
-	}
-	fmt.Printf("Worker: %v\n", w)
-	w.CollectStats()
-	w.RunTask()
-	w.StartTask()
-	w.StopTask()
-
-	m := manager.Manager{
-		Pending:  *queue.New(),
-		EventsDb: make(map[string][]task.TaskEvent),
-		TasksDb:  make(map[string][]task.Task),
-		Workers: []string{
-			w.Name,
+func createContainer() (*task.Docker, *task.DockerResult) {
+	c := task.Config{
+		Name:  "test_container_1",
+		Image: "node",
+		Env:   []string{},
+		Cmd: []string{
+			"new Date()",
 		},
-		WorkerTaskMap: make(map[string][]uuid.UUID),
-		TaskWorkerMap: make(map[uuid.UUID]string),
+	}
+	dc, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	d := task.Docker{
+		Client: dc,
+		Config: c,
 	}
 
-	n := node.Node{
-		Name:            "Daniels",
-		IpAddr:          "192.0.0.1",
-		Cores:           4,
-		Memory:          1024,
-		MemoryAllocated: 0,
-		Disk:            25,
-		DiskAllocated:   0,
-		Role:            "Worker",
-		TaskCount:       0,
+	// run the docker image
+	result := d.Run()
+	if result.Error != nil {
+		fmt.Printf("%v\n", result.Error)
+		return nil, nil
 	}
-	fmt.Printf("Manager: %v\n, Node: %v\n", m, n)
+
+	fmt.Printf("Container %s is running with config", result.ContainerId)
+	return &d, &result
+}
+
+func stopContainer(d *task.Docker) *task.DockerResult {
+	result := d.Stop()
+	if result.Error != nil {
+		fmt.Printf("%v\n", result.Error)
+		return nil
+	}
+
+	fmt.Printf("Container %s is stopped and removed.", result.ContainerId)
+	return &result
 }
