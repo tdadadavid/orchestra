@@ -34,15 +34,3 @@ func (m *Manager) UpdateTasks() {
 func (m *Manager) SendWork() {
 	fmt.Println("Sending work to workers")
 }
-
-type Node struct {
-	Name            string
-	IpAddr          string
-	Cores           int
-	Memory          int
-	MemoryAllocated int
-	Disk            int
-	DiskAllocated   int
-	Role            string
-	TaskCount       int
-}

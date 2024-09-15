@@ -6,6 +6,7 @@ import (
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
 	"orchestra/manager"
+	"orchestra/node"
 	"orchestra/task"
 	"orchestra/worker"
 	"time"
@@ -58,7 +59,7 @@ func main() {
 		TaskWorkerMap: make(map[uuid.UUID]string),
 	}
 
-	n := manager.Node{
+	n := node.Node{
 		Name:            "Daniels",
 		IpAddr:          "192.0.0.1",
 		Cores:           4,

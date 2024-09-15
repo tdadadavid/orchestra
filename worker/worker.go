@@ -16,10 +16,10 @@ import (
 
 // Worker represents a worker that processes tasks.
 type Worker struct {
-	Name      string
-	Queue     queue.Queue
+	Name      string                  //
+	Queue     queue.Queue             //
 	Db        map[uuid.UUID]task.Task // Db maps task identifiers (UUID) to their respective Task objects.
-	TaskCount int
+	TaskCount int                     //
 }
 
 func (w Worker) RunTask() {
