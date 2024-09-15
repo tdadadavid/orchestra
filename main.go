@@ -23,6 +23,8 @@ func main() {
 	if result.Error != nil {
 		log.Printf("Error stopping container: %v", result.Error)
 	}
+
+	fmt.Printf("Done testing \n")
 }
 
 func createContainer() (*task.Docker, *task.DockerResult) {
