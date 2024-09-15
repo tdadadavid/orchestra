@@ -15,8 +15,8 @@ import (
 // Manager is responsible for managing tasks and workers within the system.
 type Manager struct {
 	Pending       queue.Queue                 // Pending is a queue that holds tasks waiting to be processed.
-	EventsDb      map[string][]task.TaskEvent //
-	TasksDb       map[string][]task.Task      //
+	EventsDb      map[string][]task.TaskEvent // EventsDb maps task names to slices of TaskEvent, representing the history of events associated with each task.
+	TasksDb       map[string][]task.Task      // TasksDb maps task names to lists of Task objects, categorizing tasks within the system.
 	Workers       []string                    // Workers is a list of worker identifiers (name) assigned to manage tasks within the system.
 	WorkerTaskMap map[string][]uuid.UUID      // WorkerTaskMap maps worker identifiers to lists of UUIDs representing the tasks they are responsible for.
 	TaskWorkerMap map[uuid.UUID]string        // TaskWorkerMap maps task UUIDs to worker identifiers, indicating which worker is responsible for each task.
