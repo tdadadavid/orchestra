@@ -2,64 +2,45 @@ package main
 
 import (
 	"fmt"
-	"github.com/docker/docker/client"
-	"log"
+	"github.com/golang-collections/collections/queue"
+	"github.com/google/uuid"
 	"orchestra/task"
-	"os"
+	"orchestra/worker"
 	"time"
 )
 
 func main() {
-	fmt.Printf("Create test container \n")
-	dTask, createResult := createContainer("ubuntu")
-	if createResult.Error != nil {
-		log.Printf("Error creating container: %v", createResult.Error)
-		os.Exit(1)
+	db := make(map[uuid.UUID]*task.Task)
+	w := worker.Worker{
+		Queue: *queue.New(),
+		Db:    db,
 	}
 
-	time.Sleep(10 * time.Second)
+	t := task.Task{
+		ID:    uuid.New(),
+		Name:  "local_dice",
+		State: task.Scheduled,
+		Image: "dicedb/dicedb",
+	}
 
-	result := stopContainer(dTask)
+	// first time the worker will see the task.
+	fmt.Println("starting task.")
+	w.AddTask(t)
+	result := w.RunTask()
 	if result.Error != nil {
-		log.Printf("Error stopping container: %v", result.Error)
+		panic(result.Error)
 	}
 
-	fmt.Printf("Done testing \n")
-}
+	t.Runtime.ContainerId = result.ContainerId
+	fmt.Printf("task is runnig in container %s\n", t.Runtime.ContainerId)
+	fmt.Println("sleepy time")
+	time.Sleep(time.Second * 30)
 
-func createContainer(image string) (*task.Docker, *task.DockerResult) {
-	c := task.Config{
-		Name:  "test_container_1",
-		Image: image,
-		Env:   []string{},
-		Cmd: []string{
-			"new Date()",
-		},
-	}
-	dc, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	d := task.Docker{
-		Client: dc,
-		Config: c,
-	}
-
-	// run the docker image
-	result := d.Run()
+	fmt.Printf("stopping task %s\n", t.Runtime.ContainerId)
+	t.State = task.Completed
+	w.AddTask(t)
+	result = w.RunTask()
 	if result.Error != nil {
-		fmt.Printf("%v\n", result.Error)
-		return nil, nil
+		panic(result.Error)
 	}
-
-	fmt.Printf("Container %s is running with config ", result.ContainerId)
-	return &d, &result
-}
-
-func stopContainer(d *task.Docker) *task.DockerResult {
-	result := d.Stop()
-	if result.Error != nil {
-		fmt.Printf("%v\n", result.Error)
-		return nil
-	}
-
-	fmt.Printf("Container %s is stopped and removed.", result.ContainerId)
-	return &result
 }
