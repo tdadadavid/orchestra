@@ -1,19 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
+	"log"
 	"orchestra/task"
 	"orchestra/worker"
+	"os"
+	"strconv"
 	"time"
 )
 
 func main() {
-	db := make(map[uuid.UUID]*task.Task)
+	host := os.Getenv("ORCHESTRA_HOST")
+	port, _ := strconv.Atoi(os.Getenv("ORCHESTRA_PORT"))
+
 	w := worker.Worker{
 		Queue: *queue.New(),
-		Db:    db,
+		Db:    make(map[uuid.UUID]*task.Task),
 	}
 
 	t := task.Task{
@@ -23,24 +27,24 @@ func main() {
 		Image: "dicedb/dicedb",
 	}
 
-	// first time the worker will see the task.
-	fmt.Println("starting task.")
 	w.AddTask(t)
-	result := w.RunTask()
-	if result.Error != nil {
-		panic(result.Error)
-	}
 
-	t.Runtime.ContainerId = result.ContainerId
-	fmt.Printf("task is runnig in container %s\n", t.Runtime.ContainerId)
-	fmt.Println("sleepy time")
-	time.Sleep(time.Second * 30)
+	api := worker.API{Address: host, Port: port, Worker: &w}
+	go runTasks(&w)
+	api.Start()
+}
 
-	fmt.Printf("stopping task %s\n", t.Runtime.ContainerId)
-	t.State = task.Completed
-	w.AddTask(t)
-	result = w.RunTask()
-	if result.Error != nil {
-		panic(result.Error)
+func runTasks(w *worker.Worker) {
+	for {
+		if w.Queue.Len() != 0 {
+			result := w.RunTask()
+			if result.Error != nil {
+				log.Printf("Error running task: %s", result.Error)
+			}
+		} else {
+			log.Printf("No task found to be processed in the queue.")
+		}
+		log.Println("sleeping for 10 seconds.")
+		time.Sleep(10 * time.Second)
 	}
 }

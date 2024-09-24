@@ -25,6 +25,9 @@ import (
 //represents the desired state to which the current task should transition
 
 // Worker represents a worker that processes tasks.
+// we’re using the worker’s datastore (db) to
+// represent the current state of tasks, while we’re using the worker’s queue to
+// represent the desired state of task
 type Worker struct {
 	Name      string                   //
 	Queue     queue.Queue              //
@@ -107,18 +110,15 @@ func (w *Worker) StartTask(t task.Task) task.DockerResult {
 	return result
 }
 
-// StopTask 1. Create an instance of the Docker struct that allows us to talk to the
-// Docker daemon using the Docker SDK.
-// 2. Call the Stop() method on the Docker struct.
-// 3. Check if there were any errors in stopping the task.
-// 4. Update the FinishTime field on the task t.
-// 5. Save the updated task t to the worker’s Db field.
-// 6. Print an informative message and return the result of the operation
+// StopTask similar to 'docker stop <container_id>'
 func (w *Worker) StopTask(t task.Task) task.DockerResult {
+	//1. Create an instance of the Docker struct that allows us to talk to the Docker daemon using the Docker SDK.
 	config := task.NewConfig(&t)
 	d := task.NewDocker(config)
 
+	// 2. Call the Stop() method on the Docker struct.
 	result := d.Stop(t.Runtime.ContainerId)
+	// 3. Check if there were any errors in stopping the task.
 	if result.Error != nil {
 		log.Printf("Error stopping container: %v: %v", d.ContainerId, result.Error)
 		t.State = task.Failed
@@ -126,14 +126,26 @@ func (w *Worker) StopTask(t task.Task) task.DockerResult {
 		return result
 	}
 
+	// 4. Update the FinishTime field on the task t.
 	t.FinishTime = time.Now().UTC()
 	t.Runtime.ContainerId = result.ContainerId
 	t.State = task.Completed
+	// 5. Save the updated task t to the worker’s Db field.
 	w.Db[t.ID] = &t
 
+	// 6. Print an informative message and return the result of the operation
 	log.Printf("Stopped and removed container %v for task %v", d.ContainerId, t.Name)
 
 	return result
+}
+
+// GetTasks this fetches all the tasks in the workers store.
+func (w *Worker) GetTasks() []*task.Task {
+	var tasks []*task.Task
+	for _, t := range w.Db {
+		tasks = append(tasks, t)
+	}
+	return tasks
 }
 
 func (w *Worker) CollectStats() {
