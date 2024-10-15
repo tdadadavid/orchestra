@@ -22,10 +22,10 @@ const (
 	// Pending indicates that a task is waiting to be scheduled or processed.
 	Pending = iota
 
-	// Schedule indicates that a task is scheduled to be run but has not started yet.
-	Schedule
+	// Scheduled indicates that a task is scheduled to a worker to be run but has not started yet.
+	Scheduled
 
-	// Running represents the state in which a process or task is currently in execution.
+	// Running represents the state in which a process or task(container) is currently in execution by the worker.
 	Running
 
 	// Completed indicates that the associated task or process has been successfully finished.
@@ -35,19 +35,25 @@ const (
 	Failed
 )
 
+type Runtime struct {
+	ContainerId string
+}
+
 // Task struct represents the metadata and properties associated with a specific task.
 type Task struct {
-	ID            uuid.UUID         // ID represents the unique identifier for a Task.
-	Name          string            // Name is the human-readable identifier for
-	State         State             // State represents the current status of a Task within the system.
-	Image         string            // Image specifies the Docker image to be used for the task's container.
-	Memory        string            // Memory is the amount of memory allocated to the task's container.
+	ID            uuid.UUID // ID represents the unique identifier for a Task.
+	Name          string    // Name is the human-readable identifier for
+	State         State     // State represents the current status of a Task within the system.
+	Image         string    // Image specifies the Docker image to be used for the task's container.
+	CPU           float64
+	Memory        int               // Memory is the amount of memory allocated to the task's container.
 	Disk          int               // Disk is the amount of disk space allocated to the task's container in gigabytes.
 	ExposedPorts  nat.PortSet       // ExposedPorts is a set of ports that are exposed by the task's container.
 	PortBindings  map[string]string // PortBindings maps container ports to host ports for network binding in the task's container.
 	RestartPolicy string            // RestartPolicy specifies the restart policy for the task's container, e.g., "always", "on-failure", or "never".
 	StartTime     time.Time         // StartTime is the timestamp indicating when the task started.
 	FinishTime    time.Time         // FinishTime is the timestamp indicating when the task finished.
+	Runtime       Runtime           // Runtime is used to encapsulate runtime-specific details for the task's container.
 }
 
 // TaskEvent represents an event that occurs within the lifecycle of a task.
@@ -70,6 +76,7 @@ type Config struct {
 	Disk          int64    // Disk specifies the disk space limit (in bytes) for the container.
 	Env           []string // Env lists the environment variables for the container.
 	RestartPolicy string   // RestartPolicy defines the restart policy for the container.
+	Runtime       Runtime
 }
 
 type DockerAction string
@@ -113,6 +120,35 @@ type Docker struct {
 	ContainerId string
 }
 
+var stateTransitionMap = map[State][]State{
+	Pending: {
+		Running,
+	},
+	Scheduled: {
+		Scheduled,
+		Running,
+		Failed,
+	},
+	Running: {
+		Running,
+		Completed,
+		Failed,
+	},
+}
+
+func Contains(states []State, state State) bool {
+	for _, s := range states {
+		if s == state {
+			return true
+		}
+	}
+	return false
+}
+
+func ValidateStateTransition(from, to State) bool {
+	return Contains(stateTransitionMap[from], to)
+}
+
 // Run this performs the same duty of 'docker run' on your command-line.
 func (d *Docker) Run() DockerResult {
 	ctx := context.Background()
@@ -124,8 +160,12 @@ func (d *Docker) Run() DockerResult {
 			Action: PULL,
 		}
 	}
+
 	// copy the reader to the standard output of the container.
-	io.Copy(os.Stdout, rc)
+	_, err = io.Copy(os.Stdout, rc)
+	if err != nil {
+		return DockerResult{}
+	}
 
 	rp := container.RestartPolicy{
 		Name: container.RestartPolicyMode(d.Config.RestartPolicy),
@@ -161,6 +201,7 @@ func (d *Docker) Run() DockerResult {
 	}
 
 	// track the containerID.
+	d.Config.Runtime.ContainerId = resp.ID
 	d.ContainerId = resp.ID
 
 	out, err := d.Client.ContainerLogs(ctx, resp.ID, container.LogsOptions{
@@ -175,7 +216,7 @@ func (d *Docker) Run() DockerResult {
 	}
 
 	// copy the logs of the container to the host stand output/error
-	if _, err := stdcopy.StdCopy(os.Stdout, os.Stderr, out); err != nil {
+	if _, err = stdcopy.StdCopy(os.Stdout, os.Stderr, out); err != nil {
 		log.Printf("Error copying container logs: %v\n", err)
 		return DockerResult{}
 	}
@@ -188,15 +229,15 @@ func (d *Docker) Run() DockerResult {
 }
 
 // Stop performs the same function as both 'docker stop' and 'docker rm' commands.
-func (d *Docker) Stop() DockerResult {
+func (d *Docker) Stop(containerId string) DockerResult {
 	log.Printf("Stopping container %s\n", d.Config.Name)
 	ctx := context.Background()
-	if err := d.Client.ContainerStop(ctx, d.ContainerId, container.StopOptions{}); err != nil {
+	if err := d.Client.ContainerStop(ctx, containerId, container.StopOptions{}); err != nil {
 		log.Printf("Error stopping container %s: %v\n", d.Config.Name, err)
 		panic(err)
 	}
 
-	if err := d.Client.ContainerRemove(ctx, d.ContainerId, container.RemoveOptions{}); err != nil {
+	if err := d.Client.ContainerRemove(ctx, containerId, container.RemoveOptions{}); err != nil {
 		log.Printf("Error removing container %s: %v\n", d.Config.Name, err)
 		panic(err)
 	}
@@ -205,5 +246,23 @@ func (d *Docker) Stop() DockerResult {
 		ContainerId: d.ContainerId,
 		Action:      REMOVE,
 		Result:      SUCCESS,
+	}
+}
+
+func NewConfig(t *Task) Config {
+	return Config{
+		Name:  t.Name,
+		Image: t.Image,
+		Runtime: Runtime{
+			ContainerId: t.Runtime.ContainerId,
+		},
+	}
+}
+
+func NewDocker(config Config) Docker {
+	clientWithOpts, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	return Docker{
+		Client: clientWithOpts,
+		Config: config,
 	}
 }

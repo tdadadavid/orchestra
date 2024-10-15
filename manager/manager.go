@@ -2,14 +2,15 @@ package manager
 
 import (
 	"fmt"
+	"orchestra/task"
+
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
-	"orchestra/task"
 )
 
 // Responsibilities of a Manager.
 //1. Accept requests from users to start and stop tasks.
-//2. Schedule tasks onto worker machines.
+//2. Scheduled tasks onto worker machines.
 //3. Keep track of tasks, their states, and the machine on which they run.
 
 // Manager is responsible for managing tasks and workers within the system.

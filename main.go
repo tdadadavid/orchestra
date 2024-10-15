@@ -1,65 +1,57 @@
 package main
 
 import (
-	"fmt"
-	"github.com/docker/docker/client"
+	"flag"
 	"log"
 	"orchestra/task"
-	"os"
+	"orchestra/worker"
 	"time"
+
+	"github.com/golang-collections/collections/queue"
+	"github.com/google/uuid"
 )
 
+var (
+	Host string  
+	Port int 
+)
+
+func setupFlags() {
+	flag.StringVar(&Host, "host", "localhost", "Host on which orchestra runs")
+	flag.IntVar(&Port, "port", 7777, "port to run orchestra")
+}
+
+
+//TODO: Check the goprocinfo libarary to update `stats.go`
+// ioutil.ReadFile(path) code.
 func main() {
-	fmt.Printf("Create test container \n")
-	dTask, createResult := createContainer("ubuntu")
-	if createResult.Error != nil {
-		log.Printf("Error creating container: %v", createResult.Error)
-		os.Exit(1)
+	setupFlags()
+
+	// host := os.Getenv("ORCHESTRA_HOST")
+	// port, _ := strconv.Atoi(os.Getenv("ORCHESTRA_PORT"))
+
+	w := worker.Worker{
+		Queue: *queue.New(),
+		Db:    make(map[uuid.UUID]*task.Task),
 	}
 
-	time.Sleep(10 * time.Second)
-
-	result := stopContainer(dTask)
-	if result.Error != nil {
-		log.Printf("Error stopping container: %v", result.Error)
-	}
-
-	fmt.Printf("Done testing \n")
+	api := worker.API{Address: Host, Port: Port, Worker: &w}
+	go runTasks(&w)
+	go w.CollectStats()
+	api.Start()
 }
 
-func createContainer(image string) (*task.Docker, *task.DockerResult) {
-	c := task.Config{
-		Name:  "test_container_1",
-		Image: image,
-		Env:   []string{},
-		Cmd: []string{
-			"new Date()",
-		},
+func runTasks(w *worker.Worker) {
+	for {
+		if w.Queue.Len() != 0 {
+			result := w.RunTask()
+			if result.Error != nil {
+				log.Printf("Error running task: %s", result.Error)
+			}
+		} else {
+			log.Printf("No task found to be processed in the queue.")
+		}
+		log.Println("sleeping for 10 seconds.")
+		time.Sleep(10 * time.Second)
 	}
-	dc, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	d := task.Docker{
-		Client: dc,
-		Config: c,
-	}
-
-	// run the docker image
-	result := d.Run()
-	if result.Error != nil {
-		fmt.Printf("%v\n", result.Error)
-		return nil, nil
-	}
-
-	fmt.Printf("Container %s is running with config ", result.ContainerId)
-	return &d, &result
-}
-
-func stopContainer(d *task.Docker) *task.DockerResult {
-	result := d.Stop()
-	if result.Error != nil {
-		fmt.Printf("%v\n", result.Error)
-		return nil
-	}
-
-	fmt.Printf("Container %s is stopped and removed.", result.ContainerId)
-	return &result
 }
