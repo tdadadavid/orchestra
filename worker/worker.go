@@ -3,11 +3,12 @@ package worker
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-collections/collections/queue"
-	"github.com/google/uuid"
 	"log"
 	"orchestra/task"
 	"time"
+
+	"github.com/golang-collections/collections/queue"
+	"github.com/google/uuid"
 )
 
 // @NOTES
@@ -33,6 +34,7 @@ type Worker struct {
 	Queue     queue.Queue              //
 	Db        map[uuid.UUID]*task.Task // Db maps task identifiers (UUID) to their respective Task objects.
 	TaskCount int                      //
+	Stats *Stats
 }
 
 // RunTask starts or stop a task based on its current state
@@ -84,6 +86,7 @@ func (w *Worker) RunTask() task.DockerResult {
 
 func (w *Worker) AddTask(t task.Task) {
 	w.Queue.Enqueue(t)
+	w.UpdateTaskCount()
 }
 
 func (w *Worker) StartTask(t task.Task) task.DockerResult {
@@ -141,13 +144,23 @@ func (w *Worker) StopTask(t task.Task) task.DockerResult {
 
 // GetTasks this fetches all the tasks in the workers store.
 func (w *Worker) GetTasks() []*task.Task {
-	var tasks []*task.Task
+	tasks := make([]*task.Task, 0)
 	for _, t := range w.Db {
 		tasks = append(tasks, t)
 	}
 	return tasks
 }
 
+
 func (w *Worker) CollectStats() {
-	fmt.Println("Collecting Stats")
+	for {
+		log.Println("Collecting stats")
+		w.Stats = GetStats()
+		time.Sleep(15 * time.Second) // collect stats every 15 seconds.
+	}
+}
+
+func (w *Worker) UpdateTaskCount() {
+	w.TaskCount = w.Queue.Len()
+	w.Stats.TaskCount = w.TaskCount
 }

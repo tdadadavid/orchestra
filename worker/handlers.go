@@ -3,11 +3,12 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	uuid2 "github.com/google/uuid"
 	"log"
 	"net/http"
 	"orchestra/task"
+
+	"github.com/go-chi/chi/v5"
+	uuid2 "github.com/google/uuid"
 )
 
 func (a *API) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +68,13 @@ func (a *API) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-//This is my own implementation of 'StartTaskHandler' based on my 'now' knowledge of Go
+func (a *API) GetStatsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(a.Worker.Stats)
+}
+
+//This is my own implementation of 'StartTaskHandler' based on my as of 'now' knowledge of Go
 // but comparing my implementation to the writer's own, His is better and this is what my
 // co-tutor said.
 // Check it out: https://chatgpt.com/share/66f2352c-9300-8005-8f33-ee758c0eac97

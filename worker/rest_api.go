@@ -3,9 +3,10 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // References
@@ -32,7 +33,6 @@ func (a *API) APIError(w http.ResponseWriter, code int, errMsg string) {
 		Message:        errMsg,
 	}
 	json.NewEncoder(w).Encode(e)
-	return
 }
 
 func (a *API) initRouter() {
@@ -45,15 +45,15 @@ func (a *API) initRouter() {
 			r.Delete("/", a.StopTaskHandler)
 		})
 	})
+
+	a.Router.Route("/stats", func(r chi.Router) {
+		r.Get("/", a.GetStatsHandler)
+	})
 }
 
 func (a *API) Start() {
 	a.initRouter()
 	addr := fmt.Sprintf("%s:%d", a.Address, a.Port)
-	fmt.Printf("Server running on %s", addr)
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
-		log.Printf("Error starting http server: %s", err)
-		return
-	}
+	fmt.Printf("Server running on %s\n", addr)
+	http.ListenAndServe(addr, a.Router)
 }

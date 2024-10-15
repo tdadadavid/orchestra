@@ -41,11 +41,12 @@ type Runtime struct {
 
 // Task struct represents the metadata and properties associated with a specific task.
 type Task struct {
-	ID            uuid.UUID         // ID represents the unique identifier for a Task.
-	Name          string            // Name is the human-readable identifier for
-	State         State             // State represents the current status of a Task within the system.
-	Image         string            // Image specifies the Docker image to be used for the task's container.
-	Memory        string            // Memory is the amount of memory allocated to the task's container.
+	ID            uuid.UUID // ID represents the unique identifier for a Task.
+	Name          string    // Name is the human-readable identifier for
+	State         State     // State represents the current status of a Task within the system.
+	Image         string    // Image specifies the Docker image to be used for the task's container.
+	CPU           float64
+	Memory        int               // Memory is the amount of memory allocated to the task's container.
 	Disk          int               // Disk is the amount of disk space allocated to the task's container in gigabytes.
 	ExposedPorts  nat.PortSet       // ExposedPorts is a set of ports that are exposed by the task's container.
 	PortBindings  map[string]string // PortBindings maps container ports to host ports for network binding in the task's container.

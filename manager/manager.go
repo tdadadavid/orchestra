@@ -2,9 +2,10 @@ package manager
 
 import (
 	"fmt"
+	"orchestra/task"
+
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
-	"orchestra/task"
 )
 
 // Responsibilities of a Manager.

@@ -1,36 +1,43 @@
 package main
 
 import (
-	"github.com/golang-collections/collections/queue"
-	"github.com/google/uuid"
+	"flag"
 	"log"
 	"orchestra/task"
 	"orchestra/worker"
-	"os"
-	"strconv"
 	"time"
+
+	"github.com/golang-collections/collections/queue"
+	"github.com/google/uuid"
 )
 
+var (
+	Host string  
+	Port int 
+)
+
+func setupFlags() {
+	flag.StringVar(&Host, "host", "localhost", "Host on which orchestra runs")
+	flag.IntVar(&Port, "port", 7777, "port to run orchestra")
+}
+
+
+//TODO: Check the goprocinfo libarary to update `stats.go`
+// ioutil.ReadFile(path) code.
 func main() {
-	host := os.Getenv("ORCHESTRA_HOST")
-	port, _ := strconv.Atoi(os.Getenv("ORCHESTRA_PORT"))
+	setupFlags()
+
+	// host := os.Getenv("ORCHESTRA_HOST")
+	// port, _ := strconv.Atoi(os.Getenv("ORCHESTRA_PORT"))
 
 	w := worker.Worker{
 		Queue: *queue.New(),
 		Db:    make(map[uuid.UUID]*task.Task),
 	}
 
-	t := task.Task{
-		ID:    uuid.New(),
-		Name:  "local_dice",
-		State: task.Scheduled,
-		Image: "dicedb/dicedb",
-	}
-
-	w.AddTask(t)
-
-	api := worker.API{Address: host, Port: port, Worker: &w}
+	api := worker.API{Address: Host, Port: Port, Worker: &w}
 	go runTasks(&w)
+	go w.CollectStats()
 	api.Start()
 }
 

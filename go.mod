@@ -5,6 +5,7 @@ go 1.23.0
 require github.com/google/uuid v1.6.0
 
 require (
+	github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v27.2.1+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
