@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+  <!-- Background rectangle with rounded corners -->
+  <rect width="200" height="80" rx="10" ry="10" fill="#FFF3CD" stroke="#FFECB5" stroke-width="2"/>
+  
+  <!-- Warning triangle -->
+  <path d="M40,60 L20,25 L60,25 Z" fill="#FFA502" stroke="#FF6B6B" stroke-width="1.5"/>
+  <text x="40" y="50" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#FF6B6B">!</text>
+  
+  <!-- Pause symbol -->
+  <rect x="70" y="32" width="10" height="30" rx="2" ry="2" fill="#FF6B6B"/>
+  <rect x="85" y="32" width="10" height="30" rx="2" ry="2" fill="#FF6B6B"/>
+  
+  <!-- Text -->
+  <text x="135" y="40" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#CC5533">PROJECT</text>
+  <text x="135" y="55" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#CC5533">PAUSED</text>
+</svg>
