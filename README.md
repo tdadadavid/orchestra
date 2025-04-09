@@ -4,7 +4,7 @@
 ## ⚠️ Project Status
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/tdadadavid/orchestra/main/project-paused.svg" width="500" alt="Project Paused">
+  <img src="https://raw.githubusercontent.com/tdadadavid/orchestra/main/paused.svg" width="500" alt="Project Paused">
 </div>
 
 > **Note:** This project is currently paused due to unforeseen circumstances. Development will resume at a later date. Thank you for your understanding and continued interest.
