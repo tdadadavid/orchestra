@@ -1,14 +1,9 @@
 <h1 align="center"><img src="./Screenshot from 2024-08-15 03-33-43.png"/></h1>
 
-# ORCHESTRA
-## ⚠️ Project Status
+# ORCHESTRA (WIP)
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/tdadadavid/orchestra/main/paused.svg" width="500" alt="Project Paused">
-</div>
-
-> **Note:** This project is currently paused due to unforeseen circumstances. Development will resume at a later date. Thank you for your understanding and continued interest.
-
+## Motivation
+Understanding workload orchestration (kubernetes) in-depth
 
 ## REFERENCES
 
@@ -22,12 +17,9 @@
 
 ## Resources
 
-### Algorithm and Data strcutures to for more understanding
+## Algorithm and Data strcutures to for more understanding
 
 - Scheduling Algorithms
-
   - [TaskScheduler I](https://leetcode.com/problems/task-scheduler/)
   - [TaskScheduler II](https://leetcode.com/problems/task-scheduler-ii/description/)
   - [Operating System Algorithms](https://leetcode.com/discuss/study-guide/4152183/Scheduler-algorithms-of-OS/)
-
--
