@@ -103,7 +103,7 @@ type DockerResultMessage string
 
 const (
 	SUCCESS DockerResultMessage = "Success"
-	FAILURE                     = "Failure"
+	FAILURE DockerResultMessage = "Failure"
 )
 
 // DockerResult captures the outcome of a Docker operation, including error details, action type, container ID, and result message.

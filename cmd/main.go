@@ -35,13 +35,9 @@ func runTasks(w *worker.Worker) {
 	}
 }
 
-// TODO: Check the goprocinfo libarary to update `stats.go`
-// ioutil.ReadFile(path) code.
+// Execute TODO: Check the goprocinfo library to update `stats.go` ioutil.ReadFile(path) code.
 func Execute() {
 	setupFlags()
-
-	// host := os.Getenv("ORCHESTRA_HOST")
-	// port, _ := strconv.Atoi(os.Getenv("ORCHESTRA_PORT"))
 
 	w := worker.Worker{
 		Queue: *queue.New(),
